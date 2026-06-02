@@ -1,5 +1,6 @@
-# ─── Base ────────────────────────────────────────────────────────────────────
-FROM ubuntu:20.04
+# ─── Base (set by build.sh --version pc|nano) ────────────────────────────────
+ARG BASE_IMAGE=ubuntu:20.04
+FROM ${BASE_IMAGE}
 
 # ─── Global build args ────────────────────────────────────────────────────────
 ARG DEBIAN_FRONTEND=noninteractive
@@ -54,7 +55,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rosdep init \
     && rosdep update
 
-# ─── CUDA (auto-detected: x86_64 → 12.6  |  aarch64/Jetson → 10.2) ──────────
+# ─── CUDA ─────────────────────────────────────────────────────────────────────
+# pc:   installs cuda-toolkit-12-6 from NVIDIA apt repo
+# nano: l4t-base:r32.6.1 already ships CUDA 10.2 — no install needed
 RUN ARCH=$(uname -m) && echo "Detected architecture: $ARCH" && \
     if [ "$ARCH" = "x86_64" ]; then \
         curl -fsSLO https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.1-1_all.deb && \
@@ -63,19 +66,12 @@ RUN ARCH=$(uname -m) && echo "Detected architecture: $ARCH" && \
         apt-get update && \
         apt-get install -y --no-install-recommends --fix-missing cuda-toolkit-12-6 && \
         rm -rf /var/lib/apt/lists/* ; \
-    elif [ "$ARCH" = "aarch64" ]; then \
-        apt-key adv --fetch-keys https://repo.download.nvidia.com/jetson/jetson-ota-public.asc && \
-        echo "deb https://repo.download.nvidia.com/jetson/common r32.7 main" \
-            > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
-        echo "deb https://repo.download.nvidia.com/jetson/t210 r32.7 main" \
-            >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
-        apt-get update && \
-        apt-get install -y --no-install-recommends --fix-missing cuda-toolkit-10-2 && \
-        rm -rf /var/lib/apt/lists/* ; \
+    else \
+        echo "Jetson Nano: CUDA 10.2 provided by l4t-base, skipping install." ; \
     fi
 
 ENV PATH=/usr/local/cuda/bin:${PATH}
-ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64
 
 # ─── Environment ──────────────────────────────────────────────────────────────
 RUN echo "source /opt/ros/noetic/setup.bash" >> /etc/bash.bashrc
