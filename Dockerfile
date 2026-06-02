@@ -54,6 +54,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rosdep init \
     && rosdep update
 
+# ─── CUDA (auto-detected: x86_64 → 12.6  |  aarch64/Jetson → 10.2) ──────────
+RUN ARCH=$(uname -m) && echo "Detected architecture: $ARCH" && \
+    if [ "$ARCH" = "x86_64" ]; then \
+        curl -fsSLO https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.1-1_all.deb && \
+        dpkg -i cuda-keyring_1.1-1_all.deb && \
+        rm cuda-keyring_1.1-1_all.deb && \
+        apt-get update && \
+        apt-get install -y --no-install-recommends --fix-missing cuda-toolkit-12-6 && \
+        rm -rf /var/lib/apt/lists/* ; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+        apt-key adv --fetch-keys https://repo.download.nvidia.com/jetson/jetson-ota-public.asc && \
+        echo "deb https://repo.download.nvidia.com/jetson/common r32.7 main" \
+            > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
+        echo "deb https://repo.download.nvidia.com/jetson/t210 r32.7 main" \
+            >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
+        apt-get update && \
+        apt-get install -y --no-install-recommends --fix-missing cuda-toolkit-10-2 && \
+        rm -rf /var/lib/apt/lists/* ; \
+    fi
+
+ENV PATH=/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+
 # ─── Environment ──────────────────────────────────────────────────────────────
 RUN echo "source /opt/ros/noetic/setup.bash" >> /etc/bash.bashrc
 
