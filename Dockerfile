@@ -80,6 +80,40 @@ RUN ARCH=$(uname -m) && echo "Detected architecture: $ARCH" && \
 ENV PATH=/usr/local/cuda/bin:${PATH}
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64
 
+# ─── ZED SDK dependencies ────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        zstd \
+        wget \
+        udev \
+        sudo \
+        apt-transport-https \
+    && rm -rf /var/lib/apt/lists/*
+
+# ─── ZED SDK 3.8 ─────────────────────────────────────────────────────────────
+# Both platforms use SDK 3.8.2 — same version, different installers
+# pc:   cu117/ubuntu18 (CUDA 11.7 build, compatible with our CUDA 11.8)
+# nano: l4t32.6/jetsons (exact match for L4T r32.6.1 / JetPack 4.6)
+# skip_cuda      — CUDA already present in the image
+# skip_od_module — skips ~1.5GB AI object detection models (YOLO handles detection)
+# skip_drivers   — Nano only: host L4T handles hardware, not the container
+RUN ARCH=$(uname -m) && echo "Installing ZED SDK 3.8 for: $ARCH" && \
+    if [ "$ARCH" = "x86_64" ]; then \
+        wget -q -O /tmp/zed_sdk.run https://download.stereolabs.com/zedsdk/3.8/cu117/ubuntu18 && \
+        chmod +x /tmp/zed_sdk.run && \
+        /tmp/zed_sdk.run -- silent skip_cuda skip_od_module && \
+        rm /tmp/zed_sdk.run ; \
+    else \
+        wget -q -O /tmp/zed_sdk.run https://download.stereolabs.com/zedsdk/3.8/l4t32.6/jetsons && \
+        chmod +x /tmp/zed_sdk.run && \
+        /tmp/zed_sdk.run -- silent skip_cuda skip_od_module skip_drivers && \
+        rm /tmp/zed_sdk.run ; \
+    fi \
+    && rm -rf /usr/local/zed/resources/*
+
+ENV ZED_SDK_ROOT=/usr/local/zed
+ENV PATH=${ZED_SDK_ROOT}/tools:${PATH}
+ENV LD_LIBRARY_PATH=${ZED_SDK_ROOT}/lib:${LD_LIBRARY_PATH}
+
 # ─── Environment ──────────────────────────────────────────────────────────────
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /etc/bash.bashrc
 
