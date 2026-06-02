@@ -45,19 +45,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ─── ROS build tooling ────────────────────────────────────────────────────────
+# python3-catkin-pkg conflicts with l4t-base pre-installed packages so
+# we install the Python tools via pip3 instead of apt.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3-rosdep \
-        python3-rosinstall \
-        python3-rosinstall-generator \
-        python3-wstool \
-        python3-catkin-tools \
+        python3-pip \
         build-essential \
+    && pip3 install --no-cache-dir setuptools wheel \
+    && pip3 install --no-cache-dir \
+        catkin-pkg \
+        rosdep \
+        rosinstall \
+        rosinstall-generator \
+        wstool \
+        catkin-tools \
     && rm -rf /var/lib/apt/lists/* \
     && rosdep init \
     && rosdep update
 
 # ─── CUDA ─────────────────────────────────────────────────────────────────────
-# pc:   installs cuda-toolkit-12-6 from NVIDIA apt repo
+# pc:   installs cuda-toolkit-11-8 from NVIDIA apt repo (max for Ubuntu 18.04)
 # nano: l4t-base:r32.6.1 already ships CUDA 10.2 — no install needed
 RUN ARCH=$(uname -m) && echo "Detected architecture: $ARCH" && \
     if [ "$ARCH" = "x86_64" ]; then \
@@ -65,7 +71,7 @@ RUN ARCH=$(uname -m) && echo "Detected architecture: $ARCH" && \
         dpkg -i cuda-keyring_1.1-1_all.deb && \
         rm cuda-keyring_1.1-1_all.deb && \
         apt-get update && \
-        apt-get install -y --no-install-recommends --fix-missing cuda-toolkit-12-6 && \
+        apt-get install -y --no-install-recommends --fix-missing cuda-toolkit-11-8 && \
         rm -rf /var/lib/apt/lists/* ; \
     else \
         echo "Jetson Nano: CUDA 10.2 provided by l4t-base, skipping install." ; \
