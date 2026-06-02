@@ -2,17 +2,20 @@
 set -e
 
 usage() {
-    echo "Usage: bash build.sh --version [pc|nano]"
-    echo "  --version pc    Build for x86_64 PC (ubuntu:20.04 + CUDA 12.6)"
+    echo "Usage: bash build.sh --version [pc|nano] [--clean]"
+    echo "  --version pc    Build for x86_64 PC (ubuntu:18.04 + CUDA 12.6)"
     echo "  --version nano  Build for Jetson Nano (l4t-base:r32.6.1 + CUDA 10.2)"
+    echo "  --clean         Force a full rebuild ignoring cache"
     exit 1
 }
 
 # ─── Parse args ───────────────────────────────────────────────────────────────
 VERSION=""
+CLEAN=""
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --version) VERSION="$2"; shift ;;
+        --clean)   CLEAN="--no-cache" ;;
         *) echo "Unknown argument: $1"; usage ;;
     esac
     shift
@@ -42,7 +45,7 @@ case $VERSION in
 esac
 
 # ─── Build ────────────────────────────────────────────────────────────────────
-docker build \
+docker build $CLEAN \
     --build-arg BASE_IMAGE="$BASE_IMAGE" \
     --build-arg ROS_DISTRO="$ROS_DISTRO" \
     -t zed2_docker .
