@@ -26,12 +26,14 @@ fi
 # ─── Select base image ────────────────────────────────────────────────────────
 case $VERSION in
     pc)
-        BASE_IMAGE="ubuntu:20.04"
-        echo "Building for PC (x86_64) — base: $BASE_IMAGE"
+        BASE_IMAGE="ubuntu:18.04"
+        ROS_DISTRO="melodic"
+        echo "Building for PC (x86_64)    — base: $BASE_IMAGE | ROS: $ROS_DISTRO"
         ;;
     nano)
         BASE_IMAGE="nvcr.io/nvidia/l4t-base:r32.6.1"
-        echo "Building for Jetson Nano (aarch64) — base: $BASE_IMAGE"
+        ROS_DISTRO="melodic"
+        echo "Building for Jetson Nano    — base: $BASE_IMAGE | ROS: $ROS_DISTRO"
         ;;
     *)
         echo "Error: unknown version '$VERSION'"
@@ -40,4 +42,7 @@ case $VERSION in
 esac
 
 # ─── Build ────────────────────────────────────────────────────────────────────
-docker build --build-arg BASE_IMAGE="$BASE_IMAGE" -t zed2_docker .
+docker build \
+    --build-arg BASE_IMAGE="$BASE_IMAGE" \
+    --build-arg ROS_DISTRO="$ROS_DISTRO" \
+    -t zed2_docker .

@@ -1,9 +1,10 @@
 # ─── Base (set by build.sh --version pc|nano) ────────────────────────────────
-ARG BASE_IMAGE=ubuntu:20.04
+ARG BASE_IMAGE=ubuntu:18.04
 FROM ${BASE_IMAGE}
 
 # ─── Global build args ────────────────────────────────────────────────────────
 ARG DEBIAN_FRONTEND=noninteractive
+ARG ROS_DISTRO=melodic
 
 # ─── Locale ───────────────────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -18,7 +19,7 @@ ENV LC_ALL=en_US.UTF-8
 # ─── apt retry config (handles transient network failures) ────────────────────
 RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80retries
 
-# ─── ROS Noetic apt sources ───────────────────────────────────────────────────
+# ─── ROS apt sources ──────────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
@@ -27,19 +28,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc \
         | apt-key add - \
     && echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" \
-        > /etc/apt/sources.list.d/ros-noetic.list \
+        > /etc/apt/sources.list.d/ros.list \
     && rm -rf /var/lib/apt/lists/*
 
-# ─── ROS Noetic desktop-full ──────────────────────────────────────────────────
+# ─── ROS desktop-full ─────────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
-        ros-noetic-desktop-full \
+        ros-${ROS_DISTRO}-desktop-full \
     && rm -rf /var/lib/apt/lists/*
 
 # ─── Perception extras ────────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ros-noetic-vision-opencv \
-        ros-noetic-image-pipeline \
-        ros-noetic-camera-info-manager \
+        ros-${ROS_DISTRO}-vision-opencv \
+        ros-${ROS_DISTRO}-image-pipeline \
+        ros-${ROS_DISTRO}-camera-info-manager \
         python3-opencv \
     && rm -rf /var/lib/apt/lists/*
 
@@ -60,7 +61,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # nano: l4t-base:r32.6.1 already ships CUDA 10.2 — no install needed
 RUN ARCH=$(uname -m) && echo "Detected architecture: $ARCH" && \
     if [ "$ARCH" = "x86_64" ]; then \
-        curl -fsSLO https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.1-1_all.deb && \
+        curl -fsSLO https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-keyring_1.1-1_all.deb && \
         dpkg -i cuda-keyring_1.1-1_all.deb && \
         rm cuda-keyring_1.1-1_all.deb && \
         apt-get update && \
@@ -74,9 +75,9 @@ ENV PATH=/usr/local/cuda/bin:${PATH}
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64
 
 # ─── Environment ──────────────────────────────────────────────────────────────
-RUN echo "source /opt/ros/noetic/setup.bash" >> /etc/bash.bashrc
+RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /etc/bash.bashrc
 
-ENV ROS_DISTRO=noetic
+ENV ROS_DISTRO=${ROS_DISTRO}
 
 # ─── Default shell with ROS sourced ───────────────────────────────────────────
 SHELL ["/bin/bash", "-c"]
