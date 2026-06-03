@@ -119,6 +119,27 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /etc/bash.bashrc
 
 ENV ROS_DISTRO=${ROS_DISTRO}
 
+# ─── ZED ROS Wrapper ──────────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /root/catkin_ws/src \
+    && cd /root/catkin_ws/src \
+    && git clone --recursive --branch v3.8.x \
+        https://github.com/stereolabs/zed-ros-wrapper.git
+
+RUN /bin/bash -c "\
+    source /opt/ros/${ROS_DISTRO}/setup.bash \
+    && cd /root/catkin_ws \
+    && rosdep install --from-paths src --ignore-src -r -y --rosdistro ${ROS_DISTRO} \
+    && catkin_make -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs \
+        -DCUDA_CUDART_LIBRARY=/usr/local/cuda/lib64/stubs \
+        -DCMAKE_CXX_FLAGS='-Wl,--allow-shlib-undefined'"
+
+RUN echo "source /root/catkin_ws/devel/setup.bash" >> /etc/bash.bashrc
+
 # ─── Default shell with ROS sourced ───────────────────────────────────────────
 SHELL ["/bin/bash", "-c"]
 CMD ["bash"]
