@@ -3,7 +3,7 @@ set -e
 
 usage() {
     echo "Usage: bash build.sh --version [pc|nano] [--clean]"
-    echo "  --version pc    Build for x86_64 PC (ubuntu:18.04 + CUDA 12.6)"
+    echo "  --version pc    Build for x86_64 PC (ubuntu:18.04 + CUDA 11.8)"
     echo "  --version nano  Build for Jetson Nano (l4t-base:r32.6.1 + CUDA 10.2)"
     echo "  --clean         Force a full rebuild ignoring cache"
     exit 1
