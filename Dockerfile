@@ -110,6 +110,11 @@ RUN ARCH=$(uname -m) && echo "Installing ZED SDK 3.8 for: $ARCH" && \
     fi \
     && rm -rf /usr/local/zed/resources/*
 
+# ─── pyzed Python bindings ────────────────────────────────────────────────────
+# Pin cython<3.0 to avoid numpy build failure, then use the SDK bundled script.
+RUN pip3 install --no-cache-dir "cython<3.0" "numpy==1.19.5" \
+    && python3 /usr/local/zed/get_python_api.py
+
 ENV ZED_SDK_ROOT=/usr/local/zed
 ENV PATH=${ZED_SDK_ROOT}/tools:${PATH}
 ENV LD_LIBRARY_PATH=${ZED_SDK_ROOT}/lib:${LD_LIBRARY_PATH}
